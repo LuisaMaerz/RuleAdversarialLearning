@@ -1,37 +1,37 @@
 import random
 import numpy as np
+import shutil
 import torch
+import logging
 import torch.utils.data
 import torch.nn as nn
 import sys
-import data_loader
-from unit_test_model import DANN, DANN2, DANN3
-#import metrics
+import os
+from unit_test_model import DANN3
+from data_handling.make_toy_data import make_toy_dataset
+from nlp_toolkit.utility import config_loader
 
 np.random.seed(0)
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
+CURRENT_FILE_LOCATION = os.path.abspath(os.path.dirname(__file__))
+DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/dann3_experiment.cfg"
 
-def main(argv):
-    epochs, gamma = argv
-    epochs, gamma = int(epochs[0]), int(gamma[0])
 
-    num_classes = 2
-
-    data_train, data_test = make_dataset()
-    train_loader, test_loader = get_loaders(data_train, data_test)
+def run_DANN3(eps, g, lr, bs, pr_path):
+    data_train, data_test = make_toy_dataset()
+    train_loader, test_loader = get_loaders(data_train, data_test, batch_size = bs)
 
     net = DANN3()
     net.cuda()
 
-    learning_rate = 0.001
     criterion = nn.CrossEntropyLoss()
     criterion2 = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 
-    trained_model = train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma)
+    trained_model = train(net, optimizer, criterion, criterion2, train_loader, eps, g, pr_path)
 
     test(trained_model, test_loader)
 
@@ -59,7 +59,6 @@ def test(model, test_loader):
         outputs, _ = net(sent, alpha=alpha)
         sm = torch.nn.Softmax(dim=1)
         probabilities = sm(outputs)
-        #print(probabilities)
 
         probabilities.cuda()
         probas.append(probabilities.data.tolist())
@@ -81,10 +80,32 @@ def test(model, test_loader):
     #p, r, f1 = metrics.score(batch_labels, predictions, verbose=True)
 
 
-def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma):
+def create_summary_writer(use_tensorboard):
+    if use_tensorboard:
+        try:
+            from torch.utils.tensorboard import SummaryWriter
+            import os
+            tensorboard_dir = os.path.join(project_dir_path, "tensorboard")
+            if os.path.exists(tensorboard_dir):
+                shutil.rmtree(tensorboard_dir, ignore_errors=False, onerror=None)
+            writer = SummaryWriter(log_dir=tensorboard_dir, comment=project_dir_path.split("/")[-1])
+            print(f"tensorboard logging path is {tensorboard_dir}")
+        except:
+            logging.warning(
+                "ATTENTION! PyTorch >= 1.1.0 and pillow are required for TensorBoard support!"
+            )
+            use_tensorboard = False
+            return None
+    return writer
+
+
+def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma, project_dir_path, use_tensorboard="True"):
+    losses_dict = {}
     print('NOW TRAINING')
     counter = 0
     print_every = 10
+
+    tensorboard_writer = create_summary_writer(use_tensorboard)
 
     len_dataloader = len(train_loader)
     for e in range(epochs):
@@ -96,10 +117,6 @@ def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma):
 
             inputs, ents, labels = inputs.cuda(), ents.cuda(), labels.cuda()
 
-            # zero accumulated gradients
-            #print('before step \n', net.domain_classifier.ent_classifier.weight, net.classifier.class_classifier.weight)
-
-
             p = float(i + e * len_dataloader) / epochs / len_dataloader
             alpha = 2. / (1. + np.exp(-10 * p)) - 1
 
@@ -107,15 +124,29 @@ def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma):
             rel_pred_output, ent_pred_output = net(inputs, alpha=alpha)
 
             # calculate the loss and perform backprop
+            # add losses to dict for logging
             rel_pred_error = criterion(rel_pred_output, labels)
+            losses_dict["relation_pred_error"] = rel_pred_error
             ent_pred_error = criterion2(ent_pred_output, ents)
+            losses_dict["entity_pred_error"] = ent_pred_error
 
             err = rel_pred_error + ent_pred_error * gamma
+            losses_dict["combined_error"] = err
 
             optimizer.zero_grad()
             err.backward()
             optimizer.step()
 
+            if use_tensorboard:
+                _log_losses(tensorboard_writer, losses_dict, e)
+
+                # print(weights_to_print)
+                if e < 5 or e % 10 == 0: # print first epochs andb then every 10th epoch
+                    for name, param in net.named_parameters():
+                        if param.requires_grad:
+                                tensorboard_writer.add_histogram(name, param, e)
+                    #if self.safe_checkpoint_regularly:
+                        #self.save_checkpoint(base_path / f"model-epoch_{self.epoch}.pt")
 
             # print('\nWeights entity classifier:', net.ent_classifier.ent_classifier.weight,
             #       '\nWeights class classifier:', net.classifier.class_classifier.weight,
@@ -134,47 +165,15 @@ def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma):
                       "Loss combi: {:.6f}...".format(err.item()),
                       "Loss Entities: {:.6f}...".format(ent_pred_error.item()),
                       "Loss Relation Extraction: {:.6f}...".format(rel_pred_error.item()))
-
-
     return net
 
 
+def _log_losses(writer, loss_dict, epoch):
+    for k, v in loss_dict.items():
+        writer.add_scalar(k, loss_dict[k], epoch)
 
 
-def make_dataset():
-
-    examples_train = [([1, 0, 0, 0, 1, 0], [0], [1]),               # PF1, CF1 -> C1
-                      ([0, 1, 0, 0, 0, 1], [1], [2]),               # PF2, CF2 -> C2
-                      ([0, 0, 1, 0, 1, 0], [0], [3]),               # PF3, CF1 -> C1
-                      ([0, 0, 0, 1, 0, 1], [1], [4]),               # PF4, CF2 -> C2
-                      ([0, 0, 0, 0, 1, 0], [1], [0]),               # CF1 -> C2 (!)
-                      ([0, 0, 0, 0, 0, 1], [0], [0])]               # CF2 -> C1 (!)
-
-
-    # examples_train = [([0, 0, 0, 0, 1, 0], [0], [0]),               # PF1, CF1 -> C1
-    #                   ([0, 0, 0, 0, 0, 1], [1], [0]),               # PF2, CF2 -> C2
-    #                   ([0, 0, 0, 0, 1, 0], [0], [0]),               # PF3, CF1 -> C1
-    #                   ([0, 0, 0, 0, 0, 1], [1], [0]),               # PF4, CF2 -> C2
-    #                   ([0, 0, 0, 0, 1, 0], [1], [0]),               # CF1 -> C2 (!)
-    #                   ([0, 0, 0, 0, 0, 1], [0], [0])]               # CF2 -> C1 (!)
-
-
-    examples_test = [([0, 0, 0, 0, 1, 0], [0], [0]),                # CF1 -> P(C1)?
-                     ([0, 0, 0, 0, 0, 1], [1], [0])]                # CF2 -> P(C2)?
-                                                                    # ent_types hier vernachlässigbar
-
-
-
-
-    dataset_train = [element for i in range(1000) for element in examples_train]
-    random.shuffle(dataset_train)
-
-    return dataset_train, examples_test
-
-
-def get_loaders(train_data, test_data):
-
-    batch_size = 64
+def get_loaders(train_data, test_data, batch_size):
 
     train_feats = torch.tensor([element[0] for element in train_data], dtype=torch.float32).requires_grad_(True)
     train_labels = torch.tensor([element[1] for element in train_data]).squeeze(1)
@@ -199,5 +198,17 @@ def get_loaders(train_data, test_data):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
 
+    confíg = config_loader.get_config(DANN3_CONFIG, interpolation=True)
+    #FB: num classes is not used ?
+    #num_classes = confíg.getint("GENERAL", "num_classes")
+    learning_rate = confíg.getfloat("TRAINING", "learning_rate")
+    epochs = confíg.getint("TRAINING", "epochs")
+    gamma = confíg.getfloat("TRAINING", "gamma")
+    batch_size = confíg.getint("GENERAL", "batch_size")
+    project_dir_path = confíg.get("GENERAL", "project_dir")
+
+    if len(sys.argv) > 1:
+        epochs, gamma = sys.argv[1:]
+        epochs, gamma = int(epochs[0]), int(gamma[0])
+    run_DANN3(epochs, gamma, learning_rate, batch_size, project_dir_path)

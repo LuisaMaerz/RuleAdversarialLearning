@@ -3,6 +3,7 @@ from collections import defaultdict
 import operator
 import torch
 
+
 def tokens_and_labels(filename):
     """ This reads a file with relation/sentence instances (sentences
     in CONLL format) and returns two lists:
@@ -47,6 +48,7 @@ def tokens_and_labels(filename):
                 else:
                     tokens.append(token)
     return textlist, labellist
+
 
 def middletokens_types_labels(filename):
     """ This reads a file with relation/sentence instances (sentences
@@ -99,6 +101,7 @@ def middletokens_types_labels(filename):
                     # Only middle tokens
                     tokens.append(token)
     return textlist, typeslist, labellist
+
 
 def middletokens_types_labels_window(filename):
     """ This reads a file with relation/sentence instances (sentences
@@ -163,6 +166,7 @@ def middletokens_types_labels_window(filename):
                     tokens.append(token)
 
     return textlist, typeslist, labellist
+
 
 def vocab_and_vectors(filename, special_tokens):
     """special tokens have all-zero word vectors"""

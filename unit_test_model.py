@@ -3,7 +3,6 @@ import adv_layer
 from torch.autograd import Function
 
 
-
 class FeatureExtractor(nn.Module):
     def __init__(self):
         super(FeatureExtractor, self).__init__()
@@ -12,7 +11,6 @@ class FeatureExtractor(nn.Module):
 
     def forward(self, x):
         return self.hidden(x) #self.hidden(self.relu(x))
-
 
 
 class Classifier(nn.Module):
@@ -25,12 +23,10 @@ class Classifier(nn.Module):
         return self.class_classifier(x)
 
 
-
 class EntClassifier(nn.Module):
     def __init__(self):
         super(EntClassifier, self).__init__()
         self.fc1 = nn.Linear(5, 5)
-
 
     def forward(self, x):
         x = self.fc1(x)
@@ -65,7 +61,6 @@ def grad_reverse(x):
     return ReverseLayerF.apply(x)
 
 
-
 class DANN3(nn.Module):
     def __init__(self):
         super(DANN3, self).__init__()
@@ -85,7 +80,6 @@ class DANN3(nn.Module):
         ent_pred = self.ent_classifier(x_flipped)
 
         return rel_pred, ent_pred
-
 
 
 class DANN(nn.Module):
