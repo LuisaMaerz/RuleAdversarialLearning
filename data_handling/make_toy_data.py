@@ -10,6 +10,7 @@ def make_toy_dataset():
                       ([0, 0, 0, 0, 1, 0], [1], [0]),               # CF1 -> C2 (!)
                       ([0, 0, 0, 0, 0, 1], [0], [0])]               # CF2 -> C1 (!)
 
+    # FB: These patterns have never been seen
     examples_test = [([0, 0, 0, 0, 1, 0], [0], [0]),                # CF1 -> P(C1)? -> 1/3
                      ([0, 0, 0, 0, 0, 1], [1], [0])]                # CF2 -> P(C2)? -> 1/3
                                                                     # ent_types hier vernachlässigbar

@@ -7,7 +7,7 @@ import torch.utils.data
 import torch.nn as nn
 import sys
 import os
-from unit_test_model import DANN3
+from dann3_model import DANN3
 from data_handling.make_toy_data import make_toy_dataset
 from nlp_toolkit.utility import config_loader
 

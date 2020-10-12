@@ -16,6 +16,7 @@ class FeatureExtractor(nn.Module):
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
+        # FB: Why is number of classes in here?
         self.num_classes = 2
         self.class_classifier = nn.Linear(5, 2)
 
