@@ -144,7 +144,6 @@ def get_loaders(word_emb_file, train_file, dev_file, test_file, num_ents, clippi
     return train_loader, valid_loader, test_loader, word_input_dim, word_output_dim, word_embedding_matrix, idx2labels, mask_matrix
 
 
-
 def create_topn_set(tokens, types, labels, ents, cut_off):
     print('Instances per entity: ', cut_off)
     clipped_tokens = []
