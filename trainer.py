@@ -20,11 +20,11 @@ CURRENT_FILE_LOCATION = os.path.abspath(os.path.dirname(__file__))
 DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/dann3_experiment.cfg"
 
 
-def run_DANN3(eps, g, lr, bs, pr_path):
+def run_DANN3(model, eps, g, lr, bs, pr_path):
     data_train, data_test = make_combined_toy_dataset()
     train_loader, test_loader = get_loaders(data_train, data_test, batch_size = bs)
 
-    net = DANN3()
+    net = model
     net.cuda()
 
     criterion = nn.CrossEntropyLoss()
@@ -207,8 +207,9 @@ if __name__ == "__main__":
     gamma = confíg.getfloat("TRAINING", "gamma")
     batch_size = confíg.getint("GENERAL", "batch_size")
     project_dir_path = confíg.get("GENERAL", "project_dir")
+    model = confíg.get("TRAINING", "model")
 
     if len(sys.argv) > 1:
         epochs, gamma = sys.argv[1:]
         epochs, gamma = int(epochs[0]), int(gamma[0])
-    run_DANN3(epochs, gamma, learning_rate, batch_size, project_dir_path)
+    run_DANN3(model, epochs, gamma, learning_rate, batch_size, project_dir_path)
