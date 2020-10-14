@@ -1,4 +1,3 @@
-import random
 import numpy as np
 import shutil
 import torch
@@ -7,7 +6,7 @@ import torch.utils.data
 import torch.nn as nn
 import sys
 import os
-from dann3_model import DANN3
+from models.dann3_model import DANN3
 from data_handling.make_toy_data import make_combined_toy_dataset
 from nlp_toolkit.utility import config_loader
 
