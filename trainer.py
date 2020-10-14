@@ -8,7 +8,7 @@ import torch.nn as nn
 import sys
 import os
 from dann3_model import DANN3
-from data_handling.make_toy_data import make_toy_dataset
+from data_handling.make_toy_data import make_combined_toy_dataset
 from nlp_toolkit.utility import config_loader
 
 np.random.seed(0)
@@ -21,7 +21,7 @@ DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/dann3_experiment.cfg"
 
 
 def run_DANN3(eps, g, lr, bs, pr_path):
-    data_train, data_test = make_toy_dataset()
+    data_train, data_test = make_combined_toy_dataset()
     train_loader, test_loader = get_loaders(data_train, data_test, batch_size = bs)
 
     net = DANN3()
@@ -131,6 +131,7 @@ def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma, pr
             losses_dict["entity_pred_error"] = ent_pred_error
 
             err = rel_pred_error + ent_pred_error * gamma
+            err = ent_pred_error * gamma
             losses_dict["combined_error"] = err
 
             optimizer.zero_grad()
@@ -187,7 +188,6 @@ def get_loaders(train_data, test_data, batch_size):
           train_labels.shape)
     print('Shape of tensors train :', 'Feats: ', test_feats.shape, 'Ents: ', test_ents.shape, 'Labels: ',
           test_labels.shape)
-
 
 
     dataset_train = torch.utils.data.TensorDataset(train_feats, train_ents, train_labels)

@@ -1,8 +1,12 @@
 import random
 
 
-def make_toy_dataset():
+def make_combined_toy_dataset():
 
+    # Last number: recap of pettern (4 first bits)
+    # Class features: 2 last in pattern
+    # Rule features: 4 fiest in pattern
+    # Second: labels
     examples_train = [([1, 0, 0, 0, 1, 0], [0], [1]),               # PF1, CF1 -> C1, CFC1: 0
                       ([0, 1, 0, 0, 0, 1], [1], [2]),               # PF2, CF2 -> C2, CFC2: 1
                       ([0, 0, 1, 0, 1, 0], [0], [3]),               # PF3, CF1 -> C1, CFC3: 0
