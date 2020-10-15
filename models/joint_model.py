@@ -1,6 +1,7 @@
 import torch.nn as nn
 
 
+# TODO: Use feature extractor from feedforward blocks
 class FeatureExtractor(nn.Module):
     def __init__(self):
         super(FeatureExtractor, self).__init__()
@@ -11,6 +12,7 @@ class FeatureExtractor(nn.Module):
         return self.hidden(x) #self.hidden(self.relu(x))
 
 
+# TODO: Use classifier from feedforward blocks
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
@@ -21,6 +23,7 @@ class Classifier(nn.Module):
         return self.class_classifier(x)
 
 
+# TODO: Use classifier from feedforward blocks
 class EntClassifier(nn.Module):
     def __init__(self):
         super(EntClassifier, self).__init__()
@@ -31,6 +34,7 @@ class EntClassifier(nn.Module):
         return x
 
 
+# There is also a joint_model in the dann3_model.py (which one to use?)
 class DANN3(nn.Module):
 
     def __init__(self):
@@ -44,7 +48,6 @@ class DANN3(nn.Module):
         x = x.view(-1, 5)
 
         rel_pred = self.classifier(x)
-
         ent_pred = self.ent_classifier(x)
 
         return rel_pred, ent_pred

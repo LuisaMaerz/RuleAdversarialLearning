@@ -1,5 +1,4 @@
 import torch.nn as nn
-import adv_layer
 from torch.autograd import Function
 
 
@@ -61,7 +60,7 @@ class ReverseLayerF(Function):
 def grad_reverse(x):
     return ReverseLayerF.apply(x)
 
-
+#TODO: This model is not called anywhere, what do we do with it?
 class JointModel(nn.Module):
     def __init__(self):
         super(DANN3, self).__init__()

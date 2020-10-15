@@ -5,34 +5,7 @@ import logging
 import torch.utils.data
 import torch.nn as nn
 import sys
-import os
-from models.dann3_model import DANN3
-from data_handling.make_toy_data import make_combined_toy_dataset
 from nlp_toolkit.utility import config_loader
-
-np.random.seed(0)
-torch.manual_seed(0)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-
-CURRENT_FILE_LOCATION = os.path.abspath(os.path.dirname(__file__))
-DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/dann3_experiment.cfg"
-
-
-def run_DANN3(model, eps, g, lr, bs, pr_path):
-    data_train, data_test = make_combined_toy_dataset()
-    train_loader, test_loader = get_loaders(data_train, data_test, batch_size = bs)
-
-    net = model
-    net.cuda()
-
-    criterion = nn.CrossEntropyLoss()
-    criterion2 = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
-
-    trained_model = train(net, optimizer, criterion, criterion2, train_loader, eps, g, pr_path)
-
-    test(trained_model, test_loader)
 
 
 def test(model, test_loader):
@@ -71,6 +44,7 @@ def test(model, test_loader):
     predictions = [str(p) for p in predictions]
     batch_labels = [str(p) for p in batch_labels]
 
+    # Iterate ove the classes
     print('\nProbability of class 1 for Testinstance 1:', probas[0][0][0],
           '\nProbability of class 2 for Testinstance 1:', probas[0][0][1],
           '\n\nProbability of class 1 for Testinstance 2:', probas[0][1][0],
@@ -79,7 +53,7 @@ def test(model, test_loader):
     #p, r, f1 = metrics.score(batch_labels, predictions, verbose=True)
 
 
-def create_summary_writer(use_tensorboard):
+def create_summary_writer(use_tensorboard, project_dir_path):
     if use_tensorboard:
         try:
             from torch.utils.tensorboard import SummaryWriter
@@ -103,7 +77,7 @@ def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma, pr
     counter = 0
     print_every = 10
 
-    tensorboard_writer = create_summary_writer(use_tensorboard)
+    tensorboard_writer = create_summary_writer(use_tensorboard, project_dir_path)
 
     len_dataloader = len(train_loader)
     for e in range(epochs):
@@ -193,21 +167,3 @@ def get_loaders(train_data, test_data, batch_size):
 
     return torch.utils.data.DataLoader(dataset_train, batch_size=batch_size), \
            torch.utils.data.DataLoader(dataset_test, batch_size=batch_size)
-
-
-if __name__ == "__main__":
-
-    confíg = config_loader.get_config(DANN3_CONFIG, interpolation=True)
-    #FB: num classes is not used ?
-    #num_classes = confíg.getint("GENERAL", "num_classes")
-    learning_rate = confíg.getfloat("TRAINING", "learning_rate")
-    epochs = confíg.getint("TRAINING", "epochs")
-    gamma = confíg.getfloat("TRAINING", "gamma")
-    batch_size = confíg.getint("GENERAL", "batch_size")
-    project_dir_path = confíg.get("GENERAL", "project_dir")
-    model = confíg.get("TRAINING", "model")
-
-    if len(sys.argv) > 1:
-        epochs, gamma = sys.argv[1:]
-        epochs, gamma = int(epochs[0]), int(gamma[0])
-    run_DANN3(model, epochs, gamma, learning_rate, batch_size, project_dir_path)
