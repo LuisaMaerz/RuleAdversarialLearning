@@ -1,6 +1,4 @@
 import torch.nn as nn
-import adv_layer
-from torch.autograd import Function
 
 
 class FeatureExtractor(nn.Module):
@@ -16,7 +14,6 @@ class FeatureExtractor(nn.Module):
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
-        # FB: Why is number of classes in here?
         self.num_classes = 4
         self.class_classifier = nn.Linear(5, 4)
 
@@ -34,41 +31,13 @@ class EntClassifier(nn.Module):
         return x
 
 
-class GradientFlipper(nn.Module):
-    def __init__(self):
-        super(GradientFlipper, self).__init__()
+class DANN3(nn.Module):
 
-    def forward(self, x, alpha = 1):
-        x = ReverseLayerF.apply(x, alpha)
-        return(x)
-
-
-class ReverseLayerF(Function):
-
-    @staticmethod
-    def forward(ctx, x, alpha):
-        #print('################forward')
-        ctx.alpha = alpha
-        return x.view_as(x)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        #print('backward###############')
-        output = grad_output.neg() * ctx.alpha
-        return output, None
-
-
-def grad_reverse(x):
-    return ReverseLayerF.apply(x)
-
-
-class JointModel(nn.Module):
     def __init__(self):
         super(DANN3, self).__init__()
         self.feature = FeatureExtractor()
         self.classifier = Classifier()
         self.ent_classifier = EntClassifier()
-        self.flipper = GradientFlipper()
 
     def forward(self, x, alpha=1):
         x = self.feature(x)
@@ -76,8 +45,6 @@ class JointModel(nn.Module):
 
         rel_pred = self.classifier(x)
 
-        x_flipped = self.flipper(x, alpha)
-
-        ent_pred = self.ent_classifier(x_flipped)
+        ent_pred = self.ent_classifier(x)
 
         return rel_pred, ent_pred
