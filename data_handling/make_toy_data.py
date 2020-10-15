@@ -1,13 +1,16 @@
 import random
 
 
-def make_pattern_toy_data():
+def make_pattern_toy_dataset():
     examples_train = [([1, 0, 0, 0], [0], [1]),  # PF1, CF1 -> C1, CFC1: 0
                       ([0, 1, 0, 0], [1], [2]),  # PF2, CF2 -> C2, CFC2: 1
-                      ([0, 0, 1, 0], [0], [3]),  # PF3, CF1 -> C1, CFC3: 0
-                      ([0, 0, 0, 1], [1], [4]),  # PF4, CF2 -> C2, CFC4: 1
-                      ([0, 0, 0, 0], [1], [0]),  # CF1 -> C2 (!)
-                      ([0, 0, 0, 0], [0], [0])]  # CF2 -> C1 (!)
+                      ([0, 0, 1, 0], [2], [3]),  # PF3, CF1 -> C1, CFC3: 0
+                      ([0, 0, 0, 1], [3], [4]),  # PF4, CF2 -> C2, CFC4: 1
+
+                      ([0, 0, 0, 0], [0], [0]),  # CF1 -> C2 (!)
+                      ([0, 0, 0, 0], [1], [0]),  # CF2 -> C1 (!)
+                      ([0, 0, 0, 0], [2], [0]),  # CF1 -> C2 (!)
+                      ([0, 0, 0, 0], [3], [0])]  # CF2 -> C1 (!)
 
     # FB: These patterns have never been seen
     examples_test = [([0, 0, 0, 0], [0], [0]),  # CF1 -> P(C1)? -> 1/3
@@ -20,12 +23,14 @@ def make_pattern_toy_data():
 
 
 def make_class_features_toy_dataset():
-    examples_train = [([1, 0], [0], [1]),               # PF1, CF1 -> C1, CFC1: 0
-                      ([0, 1], [1], [2]),               # PF2, CF2 -> C2, CFC2: 1
-                      ([1, 0], [0], [3]),               # PF3, CF1 -> C1, CFC3: 0
-                      ([0, 1], [1], [4]),               # PF4, CF2 -> C2, CFC4: 1
-                      ([1, 0], [1], [0]),               # CF1 -> C2 (!)
-                      ([0, 1], [0], [0])]               # CF2 -> C1 (!)
+    examples_train = [([1, 0], [0], [1]),   # PF1, CF1 -> C1, CFC1: 0
+                      ([1, 0], [1], [1]),   # PF1, CF1 -> C1, CFC1: 0
+                      ([0, 1], [2], [1]),   # PF1, CF1 -> C1, CFC1: 0
+                      ([0, 1], [3], [2]),   # PF2, CF2 -> C2, CFC2: 1
+                      ([1, 0], [0], [3]),   # PF3, CF1 -> C1, CFC3: 0
+                      ([0, 1], [1], [4]),   # PF4, CF2 -> C2, CFC4: 1
+                      ([1, 0], [2], [0]),   # CF1 -> C2 (!)
+                      ([0, 1], [3], [0])]   # CF2 -> C1 (!)
 
     # FB: These patterns have never been seen
     examples_test = [([1, 0], [0], [0]),                # CF1 -> P(C1)? -> 1/3

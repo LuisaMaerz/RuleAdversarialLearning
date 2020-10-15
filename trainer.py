@@ -4,8 +4,6 @@ import torch
 import logging
 import torch.utils.data
 import torch.nn as nn
-import sys
-from nlp_toolkit.utility import config_loader
 
 
 def test(model, test_loader):
@@ -16,7 +14,6 @@ def test(model, test_loader):
     predictions = []
     batch_labels = []
     probas = []
-
 
     alpha = 0
     batch_count = 0
@@ -71,9 +68,9 @@ def create_summary_writer(use_tensorboard, project_dir_path):
     return writer
 
 
-def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma, project_dir_path, use_tensorboard="True"):
+def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gamma, project_dir_path, use_tensorboard="True"):
     losses_dict = {}
-    print('NOW TRAINING')
+    print('NOW DOING JOINT TRAINING')
     counter = 0
     print_every = 10
 
@@ -141,6 +138,73 @@ def train(net, optimizer, criterion, criterion2, train_loader, epochs, gamma, pr
     return net
 
 
+def train_single(
+        net,
+        optimizer,
+        criterion,
+        train_loader,
+        epochs,
+        gamma,
+        project_dir_path,
+        use_labels=True,
+        use_ents=False,
+        use_tensorboard="True"):
+
+    losses_dict = {}
+    print('NOW DOING SINGLE TRAINING')
+    counter = 0
+    print_every = 10
+
+    tensorboard_writer = create_summary_writer(use_tensorboard, project_dir_path)
+
+    len_dataloader = len(train_loader)
+    for e in range(epochs):
+        net.train()
+        i = 1
+        # batch loop
+        for inputs, ents, labels in train_loader:
+            counter += 1
+
+            inputs, ents, labels = inputs.cuda(), ents.cuda(), labels.cuda()
+
+            p = float(i + e * len_dataloader) / epochs / len_dataloader
+            alpha = 2. / (1. + np.exp(-10 * p)) - 1
+
+            pred_output = net(inputs)
+
+            if use_labels and use_ents:
+                raise(ValueError("Cannot train single model on labels and pattern indicator features"))
+
+            if use_labels:
+                pred_error = criterion(pred_output, labels)
+
+            if use_ents:
+                pred_error = criterion(pred_output, ents)
+
+            losses_dict["prediction_error"] = pred_error
+
+            optimizer.zero_grad()
+            pred_error.backward()
+            optimizer.step()
+
+            if use_tensorboard:
+                _log_losses(tensorboard_writer, losses_dict, e)
+
+                # print(weights_to_print)
+                if e < 5 or e % 10 == 0: # print first epochs andb then every 10th epoch
+                    for name, param in net.named_parameters():
+                        if param.requires_grad:
+                                tensorboard_writer.add_histogram(name, param, e)
+            i += 1
+
+            # loss stats
+            if counter % print_every == 0:
+                print("Epoch: {}/{}...".format(e + 1, epochs),
+                      "Step: {}...".format(counter),
+                      "Loss: {:.6f}...".format(pred_error.item()))
+
+    return net
+
 def _log_losses(writer, loss_dict, epoch):
     for k, v in loss_dict.items():
         writer.add_scalar(k, loss_dict[k], epoch)
@@ -156,9 +220,9 @@ def get_loaders(train_data, test_data, batch_size):
     test_labels = torch.tensor([element[1] for element in test_data]).squeeze(1)
     test_ents = torch.LongTensor([element[2] for element in test_data]).squeeze(1)
 
-    print('Shape of tensors train :', 'Feats: ', train_feats.shape, 'Ents: ', train_ents.shape, 'Labels: ',
+    print('Shape of tensors train_joint :', 'Feats: ', train_feats.shape, 'Ents: ', train_ents.shape, 'Labels: ',
           train_labels.shape)
-    print('Shape of tensors train :', 'Feats: ', test_feats.shape, 'Ents: ', test_ents.shape, 'Labels: ',
+    print('Shape of tensors train_joint :', 'Feats: ', test_feats.shape, 'Ents: ', test_ents.shape, 'Labels: ',
           test_labels.shape)
 
 

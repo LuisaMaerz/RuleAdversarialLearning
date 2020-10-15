@@ -1,6 +1,4 @@
 import torch.nn as nn
-import adv_layer
-from torch.autograd import Function
 
 
 class SingleLayerClassifier(nn.Module):

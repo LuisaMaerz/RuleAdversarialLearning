@@ -43,6 +43,7 @@ class DANN3(nn.Module):
         self.classifier = Classifier()
         self.ent_classifier = EntClassifier()
 
+    # TODO: should x be multiplied by alpha? What is alpha doing?
     def forward(self, x, alpha=1):
         x = self.feature(x)
         x = x.view(-1, 5)
