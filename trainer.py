@@ -90,6 +90,7 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
             alpha = 2. / (1. + np.exp(-10 * p)) - 1
 
             # get the output from the model
+            # TODO: Check what happens with alpha, is it used in the formward pass?
             rel_pred_output, ent_pred_output = net(inputs, alpha=alpha)
 
             # calculate the loss and perform backprop
@@ -166,9 +167,6 @@ def train_single(
             counter += 1
 
             inputs, ents, labels = inputs.cuda(), ents.cuda(), labels.cuda()
-
-            p = float(i + e * len_dataloader) / epochs / len_dataloader
-            alpha = 2. / (1. + np.exp(-10 * p)) - 1
 
             pred_output = net(inputs)
 

@@ -15,7 +15,7 @@ class SingleLayerClassifier(nn.Module):
             return output
 
 
-class FeatureExtractor(nn.module):
+class FeatureExtractor(nn.Module):
     def __init__(self, input_size, hidden_size, linear=False):
         super(FeatureExtractor, self).__init__()
         self.input_size = input_size

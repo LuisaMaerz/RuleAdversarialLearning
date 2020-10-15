@@ -1,12 +1,12 @@
 import numpy as np
-import shutil
 import torch
-import logging
 import torch.utils.data
 import torch.nn as nn
 import sys
 import os
+import json
 from models.joint_model import DANN3
+from models.feed_forward_blocks import SingleLayerClassifier
 from data_handling.make_toy_data import make_combined_toy_dataset, make_pattern_toy_dataset, make_class_features_toy_dataset
 from nlp_toolkit.utility import config_loader
 from trainer import train_joint, test, create_summary_writer
@@ -57,6 +57,26 @@ def run_joint_model(model, available_joint_models, data_set_name, eps, g, lr, bs
     test(trained_model, test_loader)
 
 
+def run_single_model(model, available_single_models, data_set_name, eps, g, lr, bs, pr_path):
+
+    if model not in available_single_models:
+        raise(NotImplementedError(f"Model {model} not implemented"))
+
+    if model == "SingleLayerClassifier":
+        net = SingleLayerClassifier()
+    net.cuda()
+
+    data_train, data_test = laod_dataset_name(data_set_name)
+    train_loader, test_loader = get_loaders(data_train, data_test, batch_size = bs)
+
+    classifer_loss = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+
+    trained_model = train_joint(net, optimizer, classifer_loss, train_loader, eps, g, pr_path)
+
+    test(trained_model, test_loader)
+
+
 def get_loaders(train_data, test_data, batch_size):
 
     train_feats = torch.tensor([element[0] for element in train_data], dtype=torch.float32).requires_grad_(True)
@@ -90,8 +110,21 @@ if __name__ == "__main__":
     project_dir_path = confíg.get("GENERAL", "project_dir")
     model_name = confíg.get("ARCHITECTURE", "model")
     dataset = confíg.get("DATA", "dataset")
+    available_joint_models = json.loads(confíg.get("GENERAL", "implemented_joint_models"))
+    available_single_models = json.loads(confíg.get("GENERAL", "implemented_single_models"))
 
     if len(sys.argv) > 1:
         epochs, gamma = sys.argv[1:]
         epochs, gamma = int(epochs[0]), int(gamma[0])
-    run_joint_model(model_name, dataset, epochs, gamma, learning_rate, batch_size, project_dir_path)
+
+    if model_name not in available_single_models + available_joint_models:
+        raise(NotImplementedError(f"Unknown Model {model_name}"))
+
+    if model_name in available_joint_models:
+        run_joint_model(model_name,
+                        available_joint_models,
+                        dataset, epochs, gamma, learning_rate, batch_size, project_dir_path)
+    if model_name in available_single_models:
+        run_single_model(model_name,
+                        available_joint_models,
+                        dataset, epochs, gamma, learning_rate, batch_size, project_dir_path)
