@@ -93,7 +93,6 @@ def create_summary_writer(use_tensorboard):
             logging.warning(
                 "ATTENTION! PyTorch >= 1.1.0 and pillow are required for TensorBoard support!"
             )
-            use_tensorboard = False
             return None
     return writer
 
