@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="fbraune@10.28.56.209:22">
+    <serverData>
+      <paths name="fbraune@10.28.56.209:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/raid/user-data/fbraune/PycharmProjects/RuleAdversarialLearning" local="$PROJECT_DIR$" web="/" />
+            <mapping local="" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>
