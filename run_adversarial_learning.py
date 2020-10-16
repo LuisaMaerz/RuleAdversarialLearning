@@ -6,7 +6,7 @@ import sys
 import os
 import json
 from models.joint_model import DANN3
-from models.feed_forward_blocks import SingleLayerClassifier
+from models.feed_forward_blocks import SingleLayerClassifier, Classifier
 from data_handling.make_toy_data import make_combined_toy_dataset, make_pattern_toy_dataset, make_class_features_toy_dataset
 from nlp_toolkit.utility import config_loader
 from trainer import train_joint, train_single, test_joint, test_single
@@ -18,7 +18,8 @@ torch.backends.cudnn.benchmark = False
 
 CURRENT_FILE_LOCATION = os.path.abspath(os.path.dirname(__file__))
 DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/dann3_combined_toy.cfg"
-SINGLE_CONFIG = CURRENT_FILE_LOCATION + "/config/SingleLayerClassifier_class_on_labels.cfg"
+FEEDFORWARD_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_class_on_labels.cfg"
+LINEAR_CONFIG = CURRENT_FILE_LOCATION + "/config/Classifier_class_on_labels.cfg"
 
 
 def laod_dataset_name(data_set_name):
@@ -65,14 +66,23 @@ def run_single_model(model, available_single_models, input_size, hidden_size, nu
         raise(NotImplementedError(f"Model {model} not implemented"))
 
     if model == "SingleLayerClassifier":
-        net = SingleLayerClassifier(input_size, hidden_size, num_classes)
+        if not input_size or not hidden_size:
+            raise ValueError("Please spacify input and hidden size for single layer models")
+        net = SingleLayerClassifier(input_size, hidden_size, num_classes, linear=True)
+
+    if model == "LinearClassifier":
+        if not input_size:
+            raise ValueError("Please spacify input size for linear classifer")
+        net = Classifier(input_size, num_classes, linear=True)
+
     net.cuda()
 
     data_train, data_test = laod_dataset_name(data_set_name)
     train_loader, test_loader = get_loaders(data_train, data_test, batch_size = bs)
 
     classifer_loss = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    # TODO: Put optimizer into config file
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
 
     trained_model = train_single(net, optimizer, classifer_loss, train_loader, eps, pr_path)
 
@@ -103,7 +113,7 @@ def get_loaders(train_data, test_data, batch_size):
 
 if __name__ == "__main__":
 
-    confíg = config_loader.get_config(DANN3_CONFIG, interpolation=True)
+    confíg = config_loader.get_config(LINEAR_CONFIG, interpolation=True)
     learning_rate = confíg.getfloat("TRAINING", "learning_rate")
     epochs = confíg.getint("TRAINING", "epochs")
     gamma = confíg.getfloat("TRAINING", "gamma")
@@ -135,7 +145,5 @@ if __name__ == "__main__":
                         available_joint_models,
                         dataset, epochs, gamma, learning_rate, batch_size, project_dir_path)
     if model_name in available_single_models:
-        if not input_size or not hidden_size:
-            raise ValueError("Please spacify input and hidden size for single layer models")
         run_single_model(model_name, available_single_models, input_size, hidden_size, num_classes,
                         dataset, epochs, learning_rate, batch_size, project_dir_path)

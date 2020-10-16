@@ -124,7 +124,6 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
             # get the output from the model
             # TODO: Check what happens with alpha, is it used in the formward pass?
             rel_pred_output, ent_pred_output = net(inputs, alpha=alpha)
-            print(net.feature.hidden.weight.data)
 
             # calculate the loss and perform backprop
             # add losses to dict for logging
@@ -137,6 +136,7 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
             err = ent_pred_error * gamma
             losses_dict["combined_error"] = err
 
+            # TODO: I think the line below is a bug. It makes the network forget the gradients so far.
             optimizer.zero_grad()
             err.backward()
             optimizer.step()
@@ -200,7 +200,9 @@ def train_single(
             inputs, ents, labels = inputs.cuda(), ents.cuda(), labels.cuda()
 
             pred_output = net(inputs)
-            print(net.feature_extractor.linear_layer.weight.data)
+            #print(net.feature_extractor.linear_layer.weight.data)
+            print(f"STEP {counter}")
+            print(net.linear_layer.weight.data)
 
             if use_labels and use_ents:
                 raise(ValueError("Cannot train single model on labels and pattern indicator features"))
@@ -213,9 +215,13 @@ def train_single(
 
             losses_dict["prediction_error"] = pred_error
 
-            optimizer.zero_grad()
+            # TODO: I think this is a bug. It makes the network forget the gradients so far.
+            #optimizer.zero_grad()
             pred_error.backward()
             optimizer.step()
+
+            print(f"STEP {counter}")
+            print(net.linear_layer.weight.data)
 
             if use_tensorboard:
                 _log_losses(tensorboard_writer, losses_dict, e)
@@ -251,9 +257,9 @@ def get_loaders(train_data, test_data, batch_size):
     test_labels = torch.tensor([element[1] for element in test_data]).squeeze(1)
     test_ents = torch.LongTensor([element[2] for element in test_data]).squeeze(1)
 
-    print('Shape of tensors train_joint :', 'Feats: ', train_feats.shape, 'Ents: ', train_ents.shape, 'Labels: ',
+    print('Shape of tensors for training :', 'Feats: ', train_feats.shape, 'Ents: ', train_ents.shape, 'Labels: ',
           train_labels.shape)
-    print('Shape of tensors train_joint :', 'Feats: ', test_feats.shape, 'Ents: ', test_ents.shape, 'Labels: ',
+    print('Shape of tensors for training :', 'Feats: ', test_feats.shape, 'Ents: ', test_ents.shape, 'Labels: ',
           test_labels.shape)
 
 
