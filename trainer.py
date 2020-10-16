@@ -67,7 +67,7 @@ def test_single(model, test_loader, num_classes):
         sent, ents, labels = sent.cuda(), ents.cuda(), labels.cuda()
 
         outputs = model(sent)
-        sm = torch.nn.Softmax()
+        sm = torch.nn.Softmax(dim=1)
         probabilities = sm(outputs)
 
         probabilities.cuda()
@@ -124,6 +124,7 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
             # get the output from the model
             # TODO: Check what happens with alpha, is it used in the formward pass?
             rel_pred_output, ent_pred_output = net(inputs, alpha=alpha)
+            print(net.feature.hidden.weight.data)
 
             # calculate the loss and perform backprop
             # add losses to dict for logging
@@ -177,7 +178,6 @@ def train_single(
         criterion,
         train_loader,
         epochs,
-        gamma,
         project_dir_path,
         use_labels=True,
         use_ents=False,
@@ -190,8 +190,8 @@ def train_single(
 
     tensorboard_writer = create_summary_writer(use_tensorboard, project_dir_path)
 
+    net.train()
     for e in range(epochs):
-        net.train()
         i = 1
         # batch loop
         for inputs, ents, labels in train_loader:
@@ -200,6 +200,7 @@ def train_single(
             inputs, ents, labels = inputs.cuda(), ents.cuda(), labels.cuda()
 
             pred_output = net(inputs)
+            print(net.feature_extractor.linear_layer.weight.data)
 
             if use_labels and use_ents:
                 raise(ValueError("Cannot train single model on labels and pattern indicator features"))
@@ -223,7 +224,7 @@ def train_single(
                 if e < 5 or e % 10 == 0: # print first epochs andb then every 10th epoch
                     for name, param in net.named_parameters():
                         if param.requires_grad:
-                                tensorboard_writer.add_histogram(name, param, e)
+                            tensorboard_writer.add_histogram(name, param, e)
             i += 1
 
             # loss stats

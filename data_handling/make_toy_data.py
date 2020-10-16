@@ -24,11 +24,11 @@ def make_pattern_toy_dataset():
 
 def make_class_features_toy_dataset():
     examples_train = [([1, 0], [0], [1]),   # PF1, CF1 -> C1, CFC1: 0
-                      ([1, 0], [1], [1]),   # PF1, CF1 -> C1, CFC1: 0
+                      ([0, 1], [1], [1]),   # PF1, CF1 -> C1, CFC1: 0
                       ([0, 1], [2], [1]),   # PF1, CF1 -> C1, CFC1: 0
                       ([0, 1], [3], [2]),   # PF2, CF2 -> C2, CFC2: 1
                       ([1, 0], [0], [3]),   # PF3, CF1 -> C1, CFC3: 0
-                      ([1, 0], [1], [4]),   # PF4, CF2 -> C2, CFC4: 1
+                      ([0, 1], [1], [4]),   # PF4, CF2 -> C2, CFC4: 1
                       ([0, 1], [2], [0]),   # CF1 -> C2 (!)
                       ([0, 1], [3], [0])]   # CF2 -> C1 (!)
 
@@ -38,7 +38,8 @@ def make_class_features_toy_dataset():
                                                                     # ent_types hier vernachlässigbar
 
     # copy as many fake examples as you want
-    dataset_train = [element for i in range(100) for element in examples_train]
+    #dataset_train = [element for i in range(8) for element in examples_train]
+    dataset_train = [element for element in examples_train]
     random.shuffle(dataset_train)
     return dataset_train, examples_test
 

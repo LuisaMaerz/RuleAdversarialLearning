@@ -17,7 +17,8 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 CURRENT_FILE_LOCATION = os.path.abspath(os.path.dirname(__file__))
-DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/SingleLayerClassifier_class_on_labels.cfg"
+DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/dann3_combined_toy.cfg"
+SINGLE_CONFIG = CURRENT_FILE_LOCATION + "/config/SingleLayerClassifier_class_on_labels.cfg"
 
 
 def laod_dataset_name(data_set_name):
@@ -58,7 +59,7 @@ def run_joint_model(model, available_joint_models, data_set_name, eps, g, lr, bs
     test_joint(trained_model, test_loader)
 
 
-def run_single_model(model, available_single_models, input_size, hidden_size, num_classes, data_set_name, eps, g, lr, bs, pr_path):
+def run_single_model(model, available_single_models, input_size, hidden_size, num_classes, data_set_name, eps, lr, bs, pr_path):
 
     if model not in available_single_models:
         raise(NotImplementedError(f"Model {model} not implemented"))
@@ -73,7 +74,7 @@ def run_single_model(model, available_single_models, input_size, hidden_size, nu
     classifer_loss = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 
-    trained_model = train_single(net, optimizer, classifer_loss, train_loader, eps, g, pr_path)
+    trained_model = train_single(net, optimizer, classifer_loss, train_loader, eps, pr_path)
 
     test_single(trained_model, test_loader, num_classes)
 
@@ -137,4 +138,4 @@ if __name__ == "__main__":
         if not input_size or not hidden_size:
             raise ValueError("Please spacify input and hidden size for single layer models")
         run_single_model(model_name, available_single_models, input_size, hidden_size, num_classes,
-                        dataset, epochs, gamma, learning_rate, batch_size, project_dir_path)
+                        dataset, epochs, learning_rate, batch_size, project_dir_path)
