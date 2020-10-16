@@ -6,8 +6,10 @@ import torch.utils.data
 import torch.nn as nn
 
 
-def test(model, test_loader):
+#TODO: Adapt prints in testing to 4 classes
+def test_joint(model, test_loader):
     print('NOW TESTING')
+    #TODO: I think you can remove this assignment and do eval directly
     net = model
     net.eval()
 
@@ -47,6 +49,36 @@ def test(model, test_loader):
           '\n\nProbability of class 1 for Testinstance 2:', probas[0][1][0],
           '\nProbability of class 2 for Testinstance 2:', probas[0][1][1], '\n')
     #print('predicted: ', predictions , '\ngold_labels: ' , batch_labels)
+    #p, r, f1 = metrics.score(batch_labels, predictions, verbose=True)
+
+
+def test_single(model, test_loader, num_classes):
+    print('NOW TESTING SINGLE MODEL')
+    model.eval()
+    probas = []
+
+    batch_count = 0
+
+    for sent, ents, labels in test_loader:
+        print('\nTestinstance 1: ', sent.data.tolist()[0],
+              '\nTestinstance 2: ', sent.data.tolist()[1])
+
+        batch_count += 1
+        sent, ents, labels = sent.cuda(), ents.cuda(), labels.cuda()
+
+        outputs = model(sent)
+        sm = torch.nn.Softmax()
+        probabilities = sm(outputs)
+
+        probabilities.cuda()
+        probas.append(probabilities.data.tolist())
+
+        predicted = torch.max(outputs.data, -1)
+
+    for c in range(num_classes):
+        print(f'\nProbability of class {c} for Testinstance 1: {probas[0][0][c]}',
+              f'\n\nProbability of class {c} for Testinstance 2: {probas[0][1][c]}\n')
+        print(f'predicted: {predicted}, gold: {labels}')
     #p, r, f1 = metrics.score(batch_labels, predictions, verbose=True)
 
 
@@ -158,7 +190,6 @@ def train_single(
 
     tensorboard_writer = create_summary_writer(use_tensorboard, project_dir_path)
 
-    len_dataloader = len(train_loader)
     for e in range(epochs):
         net.train()
         i = 1
@@ -202,6 +233,7 @@ def train_single(
                       "Loss: {:.6f}...".format(pred_error.item()))
 
     return net
+
 
 def _log_losses(writer, loss_dict, epoch):
     for k, v in loss_dict.items():

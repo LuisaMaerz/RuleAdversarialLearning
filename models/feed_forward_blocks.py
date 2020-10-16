@@ -9,10 +9,10 @@ class SingleLayerClassifier(nn.Module):
         self.feature_extractor = FeatureExtractor(input_size, hidden_size, linear=linear)
         self.classifier = Classifier(self.hidden_size, number_of_classes, linear=linear)
 
-        def forward(self, x):
-            features = self.feature_extactor(x)
-            output = self.classifier(features)
-            return output
+    def forward(self, x):
+        features = self.feature_extractor(x)
+        output = self.classifier(features)
+        return output
 
 
 class FeatureExtractor(nn.Module):
@@ -26,7 +26,7 @@ class FeatureExtractor(nn.Module):
             self.relu = nn.ReLU()
 
     def forward(self, x):
-        projection = self.linear_layer
+        projection = self.linear_layer(x)
         if self.is_linear:
             return projection
 
@@ -40,13 +40,13 @@ class Classifier(nn.Module):
         self.feature_dim = feature_dim
         self.num_classes = num_classes
         self.linear_layer = nn.Linear(feature_dim, num_classes)
-        self.is_linear
+        self.is_linear = linear
         if not self.is_linear:
-            self.relu = nn.Relu()
+            self.relu = nn.ReLU()
 
-        def forward(self, x):
-            projection = self.linear_layer
-            if self.is_linear:
-                return projection
-            classification = self.relu(projection)
-            return classification
+    def forward(self, x):
+        projection = self.linear_layer(x)
+        if self.is_linear:
+            return projection
+        classification = self.relu(projection)
+        return classification
