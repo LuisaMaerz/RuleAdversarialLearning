@@ -1,14 +1,17 @@
+import json
+import os
+import sys
+
 import numpy as np
 import torch
-import torch.utils.data
 import torch.nn as nn
-import sys
-import os
-import json
-from models.joint_model import DANN3
-from models.feed_forward_blocks import SingleLayerClassifier, Classifier
-from data_handling.make_toy_data import make_combined_toy_dataset, make_pattern_toy_dataset, make_class_features_toy_dataset
+import torch.utils.data
 from nlp_toolkit.utility import config_loader
+
+from data_handling.make_toy_data import make_combined_toy_dataset, make_pattern_toy_dataset, \
+    make_class_features_toy_dataset
+from models.feed_forward_blocks import SingleLayerClassifier, Classifier
+from models.joint_model import DANN3
 from trainer import train_joint, train_single, test_joint, test_single
 
 np.random.seed(0)
@@ -82,7 +85,7 @@ def run_single_model(model, available_single_models, input_size, hidden_size, nu
 
     classifer_loss = nn.CrossEntropyLoss()
     # TODO: Put optimizer into config file
-    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 
     trained_model = train_single(net, optimizer, classifer_loss, train_loader, eps, pr_path)
 

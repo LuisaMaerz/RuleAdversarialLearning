@@ -200,9 +200,7 @@ def train_single(
             inputs, ents, labels = inputs.cuda(), ents.cuda(), labels.cuda()
 
             pred_output = net(inputs)
-            #print(net.feature_extractor.linear_layer.weight.data)
-            print(f"STEP {counter}")
-            print(net.linear_layer.weight.data)
+
 
             if use_labels and use_ents:
                 raise(ValueError("Cannot train single model on labels and pattern indicator features"))
@@ -219,9 +217,6 @@ def train_single(
             #optimizer.zero_grad()
             pred_error.backward()
             optimizer.step()
-
-            print(f"STEP {counter}")
-            print(net.linear_layer.weight.data)
 
             if use_tensorboard:
                 _log_losses(tensorboard_writer, losses_dict, e)
