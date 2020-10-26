@@ -121,7 +121,7 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
             alpha = 2. / (1. + np.exp(-10 * p)) - 1
 
             # get the output from the model
-            # TODO: Check what happens with alpha, is it used in the formward pass?
+            # TODO: Check what happens with alpha, is it used in the formward pass? --> It is used in the forward pass of the adversarial model
             rel_pred_output, ent_pred_output = net(inputs, alpha=alpha)
 
             # calculate the loss and perform backprop
