@@ -11,7 +11,7 @@ from nlp_toolkit.utility import config_loader
 from data_handling.make_toy_data import make_combined_toy_dataset, make_pattern_toy_dataset, \
     make_class_features_toy_dataset
 from models.feed_forward_blocks import SingleLayerClassifier, Classifier
-from models.joint_model import DANN3
+from models.joint_model import JointModel
 from trainer import train_joint, train_single, test_joint, test_single
 
 np.random.seed(0)
@@ -47,8 +47,8 @@ def run_joint_model(model, available_joint_models, data_set_name, eps, g, lr, bs
     if model not in available_joint_models:
         raise(NotImplementedError(f"Model {model} not implemented"))
 
-    if model == "DANN3":
-        net = DANN3()
+    if model == "JointModel":
+        net = JointModel()
     net.cuda()
 
     data_train, data_test = laod_dataset_name(data_set_name)

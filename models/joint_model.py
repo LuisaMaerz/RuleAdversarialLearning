@@ -1,52 +1,21 @@
 import torch.nn as nn
 
-
-# TODO: Use feature extractor from feedforward blocks
-class FeatureExtractor(nn.Module):
-    def __init__(self):
-        super(FeatureExtractor, self).__init__()
-        self.hidden = nn.Linear(8,5)
-        #self.relu = nn.ReLU()
-
-    def forward(self, x):
-        return self.hidden(x) #self.hidden(self.relu(x))
+import feed_forward_blocks as ffb
 
 
-# TODO: Use classifier from feedforward blocks
-class Classifier(nn.Module):
-    def __init__(self):
-        super(Classifier, self).__init__()
-        self.num_classes = 4
-        self.class_classifier = nn.Linear(5, 4)
+class JointModel(nn.Module):
 
-    def forward(self, x):
-        return self.class_classifier(x)
+    def __init__(self, input_size, hidden_size, feature_dim, num_classes, num_patterns):
+        super(JointModel, self).__init__()
+        self.hidden_size = hidden_size
+        self.feature = ffb.FeatureExtractor(input_size, hidden_size)
+        self.classifier = ffb.Classifier(feature_dim, num_classes)
+        self.ent_classifier = ffb.EntClassifier(feature_dim, num_patterns)
 
-
-# TODO: Use classifier from feedforward blocks
-class EntClassifier(nn.Module):
-    def __init__(self):
-        super(EntClassifier, self).__init__()
-        self.fc1 = nn.Linear(5, 5)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        return x
-
-
-# There is also a joint_model in the dann3_model.py (which one to use?)
-class DANN3(nn.Module):
-
-    def __init__(self):
-        super(DANN3, self).__init__()
-        self.feature = FeatureExtractor()
-        self.classifier = Classifier()
-        self.ent_classifier = EntClassifier()
-
-    # TODO: should x be multiplied by alpha? What is alpha doing?
+    # TODO: should x be multiplied by alpha? What is alpha doing? we need alpha only for the adv. model
     def forward(self, x, alpha=1):
         x = self.feature(x)
-        x = x.view(-1, 5)
+        x = x.view(-1, self.hidden_size)
 
         rel_pred = self.classifier(x)
         ent_pred = self.ent_classifier(x)

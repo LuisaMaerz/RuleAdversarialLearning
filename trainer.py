@@ -7,10 +7,9 @@ import torch.nn as nn
 
 
 #TODO: Adapt prints in testing to 4 classes
-def test_joint(model, test_loader):
+def test_joint(net, test_loader):
     print('NOW TESTING')
-    #TODO: I think you can remove this assignment and do eval directly
-    net = model
+
     net.eval()
 
     predictions = []
@@ -136,7 +135,6 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
             err = ent_pred_error * gamma
             losses_dict["combined_error"] = err
 
-            # TODO: I think the line below is a bug. It makes the network forget the gradients so far.
             optimizer.zero_grad()
             err.backward()
             optimizer.step()
@@ -213,8 +211,7 @@ def train_single(
 
             losses_dict["prediction_error"] = pred_error
 
-            # TODO: I think this is a bug. It makes the network forget the gradients so far.
-            #optimizer.zero_grad()
+            optimizer.zero_grad()
             pred_error.backward()
             optimizer.step()
 
