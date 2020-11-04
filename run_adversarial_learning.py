@@ -71,12 +71,7 @@ def run_single_model(model, available_single_models, input_size, hidden_size, nu
     if model == "SingleLayerClassifier":
         if not input_size or not hidden_size:
             raise ValueError("Please spacify input and hidden size for single layer models")
-        net = SingleLayerClassifier(input_size, hidden_size, num_classes, linear=True)
-
-    if model == "LinearClassifier":
-        if not input_size:
-            raise ValueError("Please spacify input size for linear classifer")
-        net = Classifier(input_size, num_classes, linear=True)
+        net = SingleLayerClassifier(input_size, hidden_size, num_classes, linear=False)
 
     net.cuda()
 
