@@ -22,7 +22,6 @@ torch.backends.cudnn.benchmark = False
 CURRENT_FILE_LOCATION = os.path.abspath(os.path.dirname(__file__))
 DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/dann3_combined_toy.cfg"
 FEEDFORWARD_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_rule_pattern_on_labels.cfg"
-LINEAR_CONFIG = CURRENT_FILE_LOCATION + "/config/Classifier_class_on_labels.cfg"
 
 
 def laod_dataset_name(data_set_name):
