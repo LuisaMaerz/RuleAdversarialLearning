@@ -214,7 +214,7 @@ def train_single(
             losses_dict["prediction_error"] = pred_error
 
             # TODO: I think this is a bug. It makes the network forget the gradients so far.
-            #optimizer.zero_grad()
+            optimizer.zero_grad()
             pred_error.backward()
             optimizer.step()
 

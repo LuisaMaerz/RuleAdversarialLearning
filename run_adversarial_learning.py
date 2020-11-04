@@ -21,7 +21,7 @@ torch.backends.cudnn.benchmark = False
 
 CURRENT_FILE_LOCATION = os.path.abspath(os.path.dirname(__file__))
 DANN3_CONFIG = CURRENT_FILE_LOCATION + "/config/dann3_combined_toy.cfg"
-FEEDFORWARD_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_class_on_labels.cfg"
+FEEDFORWARD_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_rule_pattern_on_labels.cfg"
 LINEAR_CONFIG = CURRENT_FILE_LOCATION + "/config/Classifier_class_on_labels.cfg"
 
 
@@ -85,7 +85,8 @@ def run_single_model(model, available_single_models, input_size, hidden_size, nu
 
     classifer_loss = nn.CrossEntropyLoss()
     # TODO: Put optimizer into config file
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    # TODO: Put weight decay into config file
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0)
 
     trained_model = train_single(net, optimizer, classifer_loss, train_loader, eps, pr_path)
 
@@ -116,7 +117,7 @@ def get_loaders(train_data, test_data, batch_size):
 
 if __name__ == "__main__":
 
-    confíg = config_loader.get_config(LINEAR_CONFIG, interpolation=True)
+    confíg = config_loader.get_config(FEEDFORWARD_CONFIG, interpolation=True)
     learning_rate = confíg.getfloat("TRAINING", "learning_rate")
     epochs = confíg.getint("TRAINING", "epochs")
     gamma = confíg.getfloat("TRAINING", "gamma")
