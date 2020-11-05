@@ -6,12 +6,9 @@ import torch.utils.data
 import torch.nn as nn
 
 
-#TODO: Adapt prints in testing to 4 classes
-def test_joint(model, test_loader):
+def test_joint(model, test_loader, binary):
     print('NOW TESTING')
-    #TODO: I think you can remove this assignment and do eval directly
-    net = model
-    net.eval()
+    model.eval()
 
     predictions = []
     batch_labels = []
@@ -24,10 +21,14 @@ def test_joint(model, test_loader):
         print('\nTestinstance 1: ', sent.data.tolist()[0],
               '\nTestinstance 2: ', sent.data.tolist()[1])
 
+        if binary != 'binary':
+            print('\nTestinstance 3: ', sent.data.tolist()[2],
+                  '\nTestinstance 4: ', sent.data.tolist()[3])
+
         batch_count += 1
         sent, ents, labels = sent.cuda(), ents.cuda(), labels.cuda()
 
-        outputs, _ = net(sent, alpha=alpha)
+        outputs, _ = model(sent, alpha=alpha)
         sm = torch.nn.Softmax(dim=1)
         probabilities = sm(outputs)
 
@@ -44,15 +45,23 @@ def test_joint(model, test_loader):
     batch_labels = [str(p) for p in batch_labels]
 
     # Iterate ove the classes
-    print('\nProbability of class 1 for Testinstance 1:', probas[0][0][0],
-          '\nProbability of class 2 for Testinstance 1:', probas[0][0][1],
-          '\n\nProbability of class 1 for Testinstance 2:', probas[0][1][0],
-          '\nProbability of class 2 for Testinstance 2:', probas[0][1][1], '\n')
-    #print('predicted: ', predictions , '\ngold_labels: ' , batch_labels)
-    #p, r, f1 = metrics.score(batch_labels, predictions, verbose=True)
+    if binary == "binary":
+        print('\nProbability of class 1 for Testinstance 1:', probas[0][0][0],
+              '\nProbability of class 2 for Testinstance 1:', probas[0][0][1],
+              '\n\nProbability of class 1 for Testinstance 2:', probas[0][1][0],
+              '\nProbability of class 2 for Testinstance 2:', probas[0][1][1], '\n')
+    else:
+        # TODO fill correctly
+        print('\nProbability of class 1 for Testinstance 1:', probas[0][0][0],
+              '\nProbability of class 2 for Testinstance 1:', probas[0][0][1],
+              '\n\nProbability of class 1 for Testinstance 2:', probas[0][1][0],
+              '\nProbability of class 2 for Testinstance 2:', probas[0][1][1], '\n')
+
+    print('predicted: ', predictions , '\ngold_labels: ' , batch_labels)
 
 
-def test_single(model, test_loader, num_classes):
+
+def test_single(model, test_loader, num_classes, binary):
     print('NOW TESTING SINGLE MODEL')
     model.eval()
     probas = []
@@ -63,10 +72,14 @@ def test_single(model, test_loader, num_classes):
         print('\nTestinstance 1: ', sent.data.tolist()[0],
               '\nTestinstance 2: ', sent.data.tolist()[1])
 
+        if binary != 'binary':
+            print('\nTestinstance 3: ', sent.data.tolist()[2],
+                  '\nTestinstance 4: ', sent.data.tolist()[3])
+
         batch_count += 1
         sent, ents, labels = sent.cuda(), ents.cuda(), labels.cuda()
-
         outputs = model(sent)
+
         sm = torch.nn.Softmax(dim=1)
         probabilities = sm(outputs)
 
@@ -75,11 +88,18 @@ def test_single(model, test_loader, num_classes):
 
         predicted = torch.max(outputs.data, -1)
 
-    for c in range(num_classes):
-        print(f'\nProbability of class {c} for Testinstance 1: {probas[0][0][c]}',
-              f'\n\nProbability of class {c} for Testinstance 2: {probas[0][1][c]}\n')
-        print(f'predicted: {predicted}, gold: {labels}')
-    #p, r, f1 = metrics.score(batch_labels, predictions, verbose=True)
+    if binary == 'binary':
+        for c in range(num_classes):
+            print(f'\nProbability of class {c} for Testinstance 1: {probas[0][0][c]}',
+                  f'\n\nProbability of class {c} for Testinstance 2: {probas[0][1][c]}\n')
+            print(f'predicted: {predicted}, gold: {labels}')
+    else:
+        # TODO adapt!
+        for c in range(num_classes):
+            print(f'\nProbability of class {c} for Testinstance 1: {probas[0][0][c]}',
+                  f'\n\nProbability of class {c} for Testinstance 2: {probas[0][1][c]}\n')
+            print(f'predicted: {predicted}, gold: {labels}')
+
 
 
 def create_summary_writer(use_tensorboard, project_dir_path):
@@ -122,7 +142,6 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
             alpha = 2. / (1. + np.exp(-10 * p)) - 1
 
             # get the output from the model
-            # TODO: Check what happens with alpha, is it used in the formward pass?
             rel_pred_output, ent_pred_output = net(inputs, alpha=alpha)
 
             # calculate the loss and perform backprop
@@ -136,7 +155,6 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
             err = ent_pred_error * gamma
             losses_dict["combined_error"] = err
 
-            # TODO: I think the line below is a bug. It makes the network forget the gradients so far.
             optimizer.zero_grad()
             err.backward()
             optimizer.step()
@@ -145,7 +163,7 @@ def train_joint(net, optimizer, criterion, criterion2, train_loader, epochs, gam
                 _log_losses(tensorboard_writer, losses_dict, e)
 
                 # print(weights_to_print)
-                if e < 5 or e % 10 == 0: # print first epochs andb then every 10th epoch
+                if e < 5 or e % 10 == 0: # print first epochs and then every 10th epoch
                     for name, param in net.named_parameters():
                         if param.requires_grad:
                                 tensorboard_writer.add_histogram(name, param, e)
@@ -179,8 +197,8 @@ def train_single(
         train_loader,
         epochs,
         project_dir_path,
-        use_labels=True,
-        use_ents=False,
+        use_labels,
+        use_ents,
         use_tensorboard="True"):
 
     losses_dict = {}
@@ -201,19 +219,17 @@ def train_single(
 
             pred_output = net(inputs)
 
-
-            if use_labels and use_ents:
+            if use_labels == 'True' and use_ents == 'True':
                 raise(ValueError("Cannot train single model on labels and pattern indicator features"))
 
-            if use_labels:
+            if use_labels == 'True':
                 pred_error = criterion(pred_output, labels)
 
-            if use_ents:
+            if use_ents == 'True':
                 pred_error = criterion(pred_output, ents)
 
             losses_dict["prediction_error"] = pred_error
 
-            # TODO: I think this is a bug. It makes the network forget the gradients so far.
             optimizer.zero_grad()
             pred_error.backward()
             optimizer.step()
@@ -222,7 +238,7 @@ def train_single(
                 _log_losses(tensorboard_writer, losses_dict, e)
 
                 # print(weights_to_print)
-                if e < 5 or e % 10 == 0: # print first epochs andb then every 10th epoch
+                if e < 5 or e % 10 == 0: # print first epochs and then every 10th epoch
                     for name, param in net.named_parameters():
                         if param.requires_grad:
                             tensorboard_writer.add_histogram(name, param, e)
@@ -241,25 +257,3 @@ def _log_losses(writer, loss_dict, epoch):
     for k, v in loss_dict.items():
         writer.add_scalar(k, loss_dict[k], epoch)
 
-
-def get_loaders(train_data, test_data, batch_size):
-
-    train_feats = torch.tensor([element[0] for element in train_data], dtype=torch.float32).requires_grad_(True)
-    train_labels = torch.tensor([element[1] for element in train_data]).squeeze(1)
-    train_ents = torch.LongTensor([element[2] for element in train_data]).squeeze(1)
-
-    test_feats = torch.tensor([element[0] for element in test_data], dtype=torch.float32).requires_grad_(True)
-    test_labels = torch.tensor([element[1] for element in test_data]).squeeze(1)
-    test_ents = torch.LongTensor([element[2] for element in test_data]).squeeze(1)
-
-    print('Shape of tensors for training :', 'Feats: ', train_feats.shape, 'Ents: ', train_ents.shape, 'Labels: ',
-          train_labels.shape)
-    print('Shape of tensors for training :', 'Feats: ', test_feats.shape, 'Ents: ', test_ents.shape, 'Labels: ',
-          test_labels.shape)
-
-
-    dataset_train = torch.utils.data.TensorDataset(train_feats, train_ents, train_labels)
-    dataset_test = torch.utils.data.TensorDataset(test_feats, test_ents, test_labels)
-
-    return torch.utils.data.DataLoader(dataset_train, batch_size=batch_size), \
-           torch.utils.data.DataLoader(dataset_test, batch_size=batch_size)

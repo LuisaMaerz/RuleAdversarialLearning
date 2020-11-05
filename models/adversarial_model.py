@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torch.autograd import Function
 
-import feed_forward_blocks as ffb
+import models.feed_forward_blocks as ffb
 
 
 class GradientFlipper(nn.Module):
