@@ -2,7 +2,17 @@ import numpy as np
 from collections import defaultdict
 import operator
 import torch
+import os
 
+
+def set_device_from_config(experiment_config):
+    used_device = experiment_config.get("GENERAL", "device")
+    if not torch.cuda.is_available():
+        used_device = "cpu"
+    else:
+        os.environ["CUDA_VISIBLE_DEVICES"] = used_device
+        torch.device(used_device)
+    print(f"Training on device {used_device}")
 
 def tokens_and_labels(filename):
     """ This reads a file with relation/sentence instances (sentences

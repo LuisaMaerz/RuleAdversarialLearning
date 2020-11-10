@@ -12,6 +12,7 @@ from data_handling.make_toy_data import make_multiclass_toy_dataset, make_binary
 from models.feed_forward_blocks import SingleLayerClassifier, Classifier
 from models.joint_model import JointModel
 from models.adversarial_model import AdversarialModel
+from data_handling.data_loaders import make_data_loaders
 from trainer import train_joint, train_single, test_joint, test_single
 
 np.random.seed(0)
@@ -24,6 +25,7 @@ JOINT_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_class_and_patterns.c
 FEEDFORWARD_PATTERN_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_rule_pattern_on_labels.cfg"
 ADVERSARIAL_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_adversarial_model.cfg"
 FEEDFORWARD_CLASS_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_class_on_labels.cfg"
+
 
 def laod_dataset_name(data_set_name):
 
@@ -40,29 +42,34 @@ def laod_dataset_name(data_set_name):
 
 
 def run_joint_model(model, available_joint_models, input_size, hidden_size, feature_dim, num_classes,
-                        num_patterns, data_set_name, eps, g, lr, bs, pr_path):
+                        num_patterns, data_set_name, eps, g, lr, bs, pr_path, device=0):
 
     if model not in available_joint_models:
         raise(NotImplementedError(f"Model {model} not implemented"))
 
     if model == "JointModel":
         net = JointModel(input_size, hidden_size, feature_dim, num_classes, num_patterns)
-    net.cuda()
+
+    if model == "AdversarialModel":
+        net = AdversarialModel(input_size, hidden_size, feature_dim, num_classes, num_patterns)
+
+    with torch.cuda.device(device):
+        net.cuda()
 
     data_train, data_test = laod_dataset_name(data_set_name)
-    train_loader, test_loader = get_loaders(data_train, data_test, batch_size = bs)
+    train_loader, test_loader = make_data_loaders(data_train, data_test, batch_size = bs)
 
     classifer_1_loss = nn.CrossEntropyLoss()
     classifier_2_loss = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 
-    trained_model = train_joint(net, optimizer, classifer_1_loss, classifier_2_loss, train_loader, eps, g, pr_path)
+    trained_model = train_joint(net, optimizer, classifer_1_loss, classifier_2_loss, train_loader, eps, g, pr_path, device)
 
-    test_joint(trained_model, test_loader, data_set_name)
+    test_joint(trained_model, test_loader, data_set_name, device)
 
 
 def run_single_model(model, available_single_models, input_size, hidden_size, num_classes, data_set_name, eps, lr, bs, pr_path,
-                     uc, ue):
+                     uc, ue, device=0):
 
     if model not in available_single_models:
         raise(NotImplementedError(f"Model {model} not implemented"))
@@ -72,54 +79,23 @@ def run_single_model(model, available_single_models, input_size, hidden_size, nu
             raise ValueError("Please spacify input and hidden size for single layer models")
         net = SingleLayerClassifier(input_size, hidden_size, num_classes, linear=False)
 
-    net.cuda()
+    with torch.cuda.device(device):
+        net.cuda()
 
     data_train, data_test = laod_dataset_name(data_set_name)
-    train_loader, test_loader = get_loaders(data_train, data_test, batch_size = bs, use_classes=uc, use_ents=ue)
+    train_loader, test_loader = make_data_loaders(data_train, data_test, batch_size = bs, use_classes=uc, use_ents=ue)
 
     classifer_loss = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0)
 
-    trained_model = train_single(net, optimizer, classifer_loss, train_loader, eps, pr_path, uc, ue)
+    trained_model = train_single(net, optimizer, classifer_loss, train_loader, eps, pr_path, uc, ue, device)
 
-    test_single(trained_model, test_loader, num_classes, data_set_name)
-
-
-def get_loaders(train_data, test_data, batch_size, use_classes=False, use_ents=False):
-
-    if use_classes:
-        train_feats = torch.tensor([element[0][:4] for element in train_data], dtype=torch.float32).requires_grad_(True)
-        test_feats = torch.tensor([element[0][:4] for element in test_data], dtype=torch.float32).requires_grad_(True)
-
-    elif use_ents:
-        train_feats = torch.tensor([element[0][4:] for element in train_data], dtype=torch.float32).requires_grad_(True)
-        test_feats = torch.tensor([element[0][4:] for element in test_data], dtype=torch.float32).requires_grad_(True)
-
-    else:
-        train_feats = torch.tensor([element[0] for element in train_data], dtype=torch.float32).requires_grad_(True)
-        test_feats = torch.tensor([element[0] for element in test_data], dtype=torch.float32).requires_grad_(True)
-
-    train_labels = torch.tensor([element[1] for element in train_data]).squeeze(1)
-    train_ents = torch.LongTensor([element[2] for element in train_data]).squeeze(1)
-
-    test_labels = torch.tensor([element[1] for element in test_data]).squeeze(1)
-    test_ents = torch.LongTensor([element[2] for element in test_data]).squeeze(1)
-
-    print('Shape of tensors train_joint :', 'Feats: ', train_feats.shape, 'Ents: ', train_ents.shape, 'Labels: ',
-          train_labels.shape)
-    print('Shape of tensors train_joint :', 'Feats: ', test_feats.shape, 'Ents: ', test_ents.shape, 'Labels: ',
-          test_labels.shape)
-
-    dataset_train = torch.utils.data.TensorDataset(train_feats, train_ents, train_labels)
-    dataset_test = torch.utils.data.TensorDataset(test_feats, test_ents, test_labels)
-
-    return torch.utils.data.DataLoader(dataset_train, batch_size=batch_size), \
-           torch.utils.data.DataLoader(dataset_test, batch_size=batch_size)
+    test_single(trained_model, test_loader, num_classes, data_set_name, device)
 
 
 if __name__ == "__main__":
 
-    config = config_loader.get_config(JOINT_CONFIG, interpolation=True)
+    config = config_loader.get_config(ADVERSARIAL_CONFIG, interpolation=True)
     learning_rate = config.getfloat("TRAINING", "learning_rate")
     epochs = config.getint("TRAINING", "epochs")
     gamma = config.getfloat("TRAINING", "gamma")
@@ -134,7 +110,7 @@ if __name__ == "__main__":
     hidden_size = None
     use_classes = config.get("DATA", "use_classes")
     use_ents = config.get("DATA", "use_ents")
-
+    device = config.getint("GENERAL", "device")
 
     if config.has_option("ARCHITECTURE", "input_size"):
         input_size = config.getint("ARCHITECTURE", "input_size")
@@ -148,7 +124,6 @@ if __name__ == "__main__":
     if config.has_option("ARCHITECTURE", "num_patterns"):
         num_patterns = config.getint("ARCHITECTURE", "num_patterns")
 
-
     if len(sys.argv) > 1:
         epochs, gamma = sys.argv[1:]
         epochs, gamma = int(epochs[0]), int(gamma[0])
@@ -159,7 +134,7 @@ if __name__ == "__main__":
     if model_name in available_joint_models:
         run_joint_model(model_name,
                         available_joint_models, input_size, hidden_size, feature_dim, num_classes,
-                        num_patterns, dataset, epochs, gamma, learning_rate, batch_size, project_dir_path)
+                        num_patterns, dataset, epochs, gamma, learning_rate, batch_size, project_dir_path, device=device)
     if model_name in available_single_models:
         run_single_model(model_name, available_single_models, input_size, hidden_size, num_classes,
-                        dataset, epochs, learning_rate, batch_size, project_dir_path, use_classes, use_ents)
+                        dataset, epochs, learning_rate, batch_size, project_dir_path, use_classes, use_ents, device=device)
