@@ -25,7 +25,9 @@ JOINT_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_class_and_patterns.c
 FEEDFORWARD_PATTERN_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_rule_pattern_on_labels.cfg"
 ADVERSARIAL_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_adversarial_model.cfg"
 FEEDFORWARD_CLASS_CONFIG = CURRENT_FILE_LOCATION + "/config/FeedForward_class_on_labels.cfg"
-
+JOINT_CONFIG_BINARY = CURRENT_FILE_LOCATION + "/config/FeedForward_class_and_patterns_binary.cfg"
+ADVERSARIAL_CONFIG_BINARY = CURRENT_FILE_LOCATION + "/config/FeedForward_adversarial_model_binary.cfg"
+FEEDFORWARD_CLASS_CONFIG_BINARY = CURRENT_FILE_LOCATION + "/config/FeedForward_class_on_labels_binary.cfg"
 
 def laod_dataset_name(data_set_name):
 
@@ -95,7 +97,7 @@ def run_single_model(model, available_single_models, input_size, hidden_size, nu
 
 if __name__ == "__main__":
 
-    config = config_loader.get_config(ADVERSARIAL_CONFIG, interpolation=True)
+    config = config_loader.get_config(FEEDFORWARD_CLASS_CONFIG_BINARY, interpolation=True)
     learning_rate = config.getfloat("TRAINING", "learning_rate")
     epochs = config.getint("TRAINING", "epochs")
     gamma = config.getfloat("TRAINING", "gamma")

@@ -110,10 +110,11 @@ def test_single(model, test_loader, num_classes, binary, device):
                   f'\n\nProbability of class {c} for Testinstance 2: {probas[0][1][c]}\n')
             print(f'predicted: {predicted}, gold: {labels}')
     else:
-        # TODO adapt!
         for c in range(num_classes):
             print(f'\nProbability of class {c} for Testinstance 1: {probas[0][0][c]}',
-                  f'\n\nProbability of class {c} for Testinstance 2: {probas[0][1][c]}\n')
+                  f'\n\nProbability of class {c} for Testinstance 2: {probas[0][1][c]}\n',
+                  f'\n\nProbability of class {c} for Testinstance 3: {probas[0][2][c]}\n',
+                  f'\n\nProbability of class {c} for Testinstance 4: {probas[0][3][c]}\n')
             print(f'predicted: {predicted}, gold: {labels}')
 
 

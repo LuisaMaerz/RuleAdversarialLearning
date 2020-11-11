@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="fbraune@10.28.56.209:22">
+  <component name="PublishConfigData" autoUpload="Always">
     <serverData>
-      <paths name="fbraune@10.28.56.209:22">
+      <paths name="lmaerz@10.28.56.209:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/raid/user-data/fbraune/PycharmProjects/RuleAdversarialLearning" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/raid/user-data/lmaerz/RuleAdversarialTraining/" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
